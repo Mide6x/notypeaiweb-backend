@@ -24,14 +24,10 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-  origin: [
-    'https://notypeai.com',
-    'https://www.notypeai.com',
-    'https://notypeaiweb-backend.onrender.com'
-  ],
+  origin: ['https://notypeai.com'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie']
 }));
 
 // Configure session with MongoStore
@@ -44,10 +40,10 @@ app.use(session({
     ttl: 24 * 60 * 60
   }),
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
-    domain: process.env.NODE_ENV === 'production' ? '.notypeai.com' : undefined
+    httpOnly: true
   }
 }));
 
@@ -69,3 +65,6 @@ app.listen(PORT, () => {
 
 // Add after existing middleware
 app.use('/auth', authRoutes);
+
+// Add this before other middleware
+app.set('trust proxy', 1);
