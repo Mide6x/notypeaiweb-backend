@@ -12,7 +12,8 @@ const requiredEnvVars = [
   'MONGODB_URI',
   'SESSION_SECRET',
   'CLIENT_URL',
-  'NODE_ENV'
+  'NODE_ENV',
+  'PORT'
 ];
 
 for (const envVar of requiredEnvVars) {

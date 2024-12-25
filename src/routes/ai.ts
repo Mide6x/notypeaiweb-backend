@@ -90,24 +90,72 @@ router.post('/summarize', isAuthenticated, async (req: Request, res: Response): 
 // Grammar Editor
 router.post('/grammar', isAuthenticated, async (req: Request, res: Response): Promise<void> => {
   try {
-    const { text } = req.body;
+    const { text, language } = req.body;
+    console.log('Received request:', { language, textLength: text?.length });
     
     if (!text) {
+      console.log('Missing text in request');
       res.status(400).json({ message: 'Text is required' });
       return;
     }
 
+    const systemPrompts: Record<string, string> = {
+      'en-GB': "You are a professional British English editor. Analyze the text and provide specific grammar, spelling, and style corrections following British English conventions. Format your response as a list of corrections, each starting with '•'.",
+      'en-US': "You are a professional American English editor. Analyze the text and provide specific grammar, spelling, and style corrections following American English conventions. Format your response as a list of corrections, each starting with '•'.",
+      'fr': "You are a professional French language editor. Analyze the text and provide specific grammar, spelling, and style corrections following French language conventions. Format your response as a list of corrections, each starting with '•'.",
+      'ar': "You are a professional Arabic language editor. Analyze the text and provide specific grammar, spelling, and style corrections following Arabic language conventions. Format your response as a list of corrections, each starting with '•'.",
+      'ha': "You are a professional Hausa language editor. Analyze the text and provide specific grammar, spelling, and style corrections following Hausa language conventions. Format your response as a list of corrections, each starting with '•'.",
+      'yo': "You are a professional Yorùbá language editor. Analyze the text and provide specific grammar, spelling, and style corrections following Yorùbá language conventions. Format your response as a list of corrections, each starting with '•'.",
+      'ig': "You are a professional Igbo language editor. Analyze the text and provide specific grammar, spelling, and style corrections following Igbo language conventions. Format your response as a list of corrections, each starting with '•'.",
+      'zu': "You are a professional Zulu language editor. Analyze the text and provide specific grammar, spelling, and style corrections following Zulu language conventions. Format your response as a list of corrections, each starting with '•'."
+    };
+
+    const selectedPrompt = systemPrompts[language as keyof typeof systemPrompts];
+    console.log('Selected language prompt:', { language, hasPrompt: !!selectedPrompt });
+
+    if (!selectedPrompt) {
+      console.warn('Unknown language requested:', language);
+    }
+
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { 
+        role: "system" as const, 
+        content: selectedPrompt || systemPrompts['en-GB']
+      },
+      { 
+        role: "user" as const, 
+        content: `Check this text for grammar and style issues in ${language} language: ${text}` 
+      }
+    ];
+
+    console.log('Sending to OpenAI:', { 
+      language, 
+      messageCount: messages.length,
+      systemPromptPreview: typeof messages[0].content === 'string' 
+        ? messages[0].content.substring(0, 50) 
+        : 'Content is not a string'
+    });
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [
-        { role: "system", content: "You are a professional editor. Fix grammar and improve writing while maintaining the original meaning." },
-        { role: "user", content: `Edit this text for grammar and clarity: ${text}` }
-      ],
+      messages,
       temperature: 0.3,
       max_tokens: Number(process.env.MAX_TOKENS_PER_REQUEST) || 1000
     });
 
+    const correctionText = completion.choices[0].message.content || '';
+    const corrections = correctionText
+      .split('\n')
+      .filter(line => line.trim().startsWith('•'))
+      .map(line => line.trim());
+
+    console.log('Processing response:', { 
+      hasContent: !!correctionText,
+      correctionsCount: corrections.length 
+    });
+
     res.json({ 
+      corrections,
       correctedText: completion.choices[0].message.content,
       usage: completion.usage
     });
@@ -130,12 +178,20 @@ router.post('/translate', isAuthenticated, async (req: Request, res: Response): 
       return;
     }
 
+    const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
+      { 
+        role: "system" as const, 
+        content: `You are a professional translator. Translate text to ${targetLanguage} while preserving meaning and context.` 
+      },
+      { 
+        role: "user" as const, 
+        content: `Translate this text to ${targetLanguage}: ${text}` 
+      }
+    ];
+
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
-      messages: [
-        { role: "system", content: `You are a professional translator. Translate text to ${targetLanguage} while preserving meaning and context.` },
-        { role: "user", content: `Translate this text to ${targetLanguage}: ${text}` }
-      ],
+      messages,
       temperature: 0.3,
       max_tokens: Number(process.env.MAX_TOKENS_PER_REQUEST) || 1000
     });
