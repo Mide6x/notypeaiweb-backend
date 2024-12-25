@@ -26,8 +26,17 @@ router.get('/user', (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  req.logout(() => {
-    res.redirect(`${process.env.CLIENT_URL}/login`);
+  req.logout((err) => {
+    if (err) {
+      return res.status(500).json({ message: 'Error logging out' });
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error destroying session' });
+      }
+      res.clearCookie('connect.sid');
+      res.status(200).json({ message: 'Logged out successfully' });
+    });
   });
 });
 
