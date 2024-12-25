@@ -19,12 +19,16 @@ passport.deserializeUser(async (id: string, done) => {
   }
 });
 
+const callbackURL = process.env.NODE_ENV === 'production'
+  ? 'https://notypeaiweb-backend.onrender.com/auth/google/callback'
+  : 'http://localhost:3000/auth/google/callback';
+
 passport.use(
   new GoogleStrategy(
     {
       clientID: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      callbackURL: `${process.env.VITE_API_URL}/auth/google/callback`,
+      callbackURL,
       scope: ['profile', 'email']
     },
     async (accessToken, refreshToken, profile, done) => {
