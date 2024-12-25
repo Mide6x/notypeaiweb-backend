@@ -6,9 +6,20 @@ import MongoStore from 'connect-mongo';
 dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Check for required environment variables
-if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.MONGODB_URI || !process.env.SESSION_SECRET || !process.env.CLIENT_URL || !process.env.NODE_ENV || !process.env.PORT) {
-  console.error('Missing required environment variables');
-  process.exit(1);
+const requiredEnvVars = [
+  'GOOGLE_CLIENT_ID',
+  'GOOGLE_CLIENT_SECRET',
+  'MONGODB_URI',
+  'SESSION_SECRET',
+  'CLIENT_URL',
+  'NODE_ENV'
+];
+
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`);
+    process.exit(1);
+  }
 }
 
 import express from 'express';
@@ -77,8 +88,9 @@ mongoose.connect(process.env.MONGODB_URI as string)
     process.exit(1);
   });
 
-const PORT = process.env.PORT as string || 3000;
-app.listen(PORT, () => {
+// Port configuration
+const PORT = parseInt(process.env.PORT || '3000', 10);
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 
@@ -87,3 +99,13 @@ app.use('/auth', authRoutes);
 
 // Add after existing routes
 app.use('/api/ai', aiRoutes);
+
+// Add a health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+// Error handling
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled Rejection:', error);
+});
