@@ -24,7 +24,10 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-  origin: process.env.CLIENT_URL as string,
+  origin: [
+    'https://notypeai.com',
+    'https://www.notypeai.com'
+  ],
   credentials: true
 }));
 
