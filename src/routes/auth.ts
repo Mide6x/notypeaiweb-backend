@@ -17,12 +17,17 @@ router.get('/google/callback',
       req.session.cookie.secure = true;
       req.session.cookie.sameSite = 'none';
       req.session.cookie.domain = '.onrender.com';
+      req.session.cookie.path = '/';
     }
     res.redirect(`${process.env.CLIENT_URL}/dashboard`);
   }
 );
 
 router.get('/user', (req, res) => {
+  console.log('Session:', req.session);
+  console.log('User:', req.user);
+  console.log('Is Authenticated:', req.isAuthenticated());
+  
   if (req.isAuthenticated()) {
     res.json(req.user);
   } else {
