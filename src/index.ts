@@ -21,6 +21,9 @@ import authRoutes from './routes/auth';
 
 const app = express();
 
+// Add this before other middleware
+app.enable('trust proxy');
+
 // Middleware
 app.use(express.json());
 app.use(cors({
@@ -39,17 +42,20 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI as string,
-    ttl: 24 * 60 * 60 // 1 day
+    ttl: 24 * 60 * 60
   }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  proxy: true,
+  cookie: process.env.NODE_ENV === 'production' ? {
+    secure: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
-    path: '/',
-    domain: process.env.NODE_ENV === 'production' 
-      ? '.notypeaiweb-backend.onrender.com'
-      : undefined
+    domain: '.onrender.com'
+  } : {
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true
   }
 }));
 
@@ -71,6 +77,3 @@ app.listen(PORT, () => {
 
 // Add after existing middleware
 app.use('/auth', authRoutes);
-
-// Add this before other middleware
-app.set('trust proxy', 1);

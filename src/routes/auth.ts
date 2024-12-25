@@ -13,6 +13,11 @@ router.get('/google/callback',
     session: true 
   }),
   (req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+      req.session.cookie.secure = true;
+      req.session.cookie.sameSite = 'none';
+      req.session.cookie.domain = '.onrender.com';
+    }
     res.redirect(`${process.env.CLIENT_URL}/dashboard`);
   }
 );
