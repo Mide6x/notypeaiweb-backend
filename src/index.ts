@@ -26,9 +26,12 @@ app.use(express.json());
 app.use(cors({
   origin: [
     'https://notypeai.com',
-    'https://www.notypeai.com'
+    'https://www.notypeai.com',
+    'https://notypeaiweb-backend.onrender.com'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Configure session with MongoStore
@@ -38,11 +41,13 @@ app.use(session({
   saveUninitialized: false,
   store: MongoStore.create({
     mongoUrl: process.env.MONGODB_URI as string,
-    ttl: 24 * 60 * 60 // Session TTL in seconds (24 hours)
+    ttl: 24 * 60 * 60
   }),
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000,
+    domain: process.env.NODE_ENV === 'production' ? '.notypeai.com' : undefined
   }
 }));
 
