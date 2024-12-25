@@ -20,7 +20,7 @@ passport.deserializeUser(async (id: string, done) => {
 });
 
 const callbackURL = process.env.NODE_ENV === 'production'
-  ? 'https://notypeaiweb-backend.onrender.com/auth/google/callback'
+  ? `${process.env.SERVER_URL}/auth/google/callback`
   : 'http://localhost:3000/auth/google/callback';
 
 passport.use(
