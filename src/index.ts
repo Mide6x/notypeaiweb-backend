@@ -18,6 +18,7 @@ import cors from 'cors';
 import mongoose from 'mongoose';
 import './config/passport';
 import authRoutes from './routes/auth';
+import aiRoutes from './routes/ai';
 
 const app = express();
 
@@ -83,3 +84,6 @@ app.listen(PORT, () => {
 
 // Add after existing middleware
 app.use('/auth', authRoutes);
+
+// Add after existing routes
+app.use('/api/ai', aiRoutes);

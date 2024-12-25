@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import mongoose, { Document } from 'mongoose';
+import { User } from '../types/auth';
 
 const userSchema = new mongoose.Schema({
   googleId: {
@@ -11,12 +12,19 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
-  name: String,
-  picture: String,
+  name: {
+    type: String,
+    required: true
+  },
+  picture: {
+    type: String,
+    required: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
 
-export default mongoose.model('User', userSchema); 
+export interface UserModel extends Document, Omit<User, '_id'> {}
+export default mongoose.model<UserModel>('User', userSchema); 
