@@ -28,7 +28,12 @@ app.enable('trust proxy');
 app.use(express.json());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://notypeai.com', 'https://www.notypeai.com', 'https://notypeaiweb-backend.onrender.com']
+    ? [
+        'https://notypeai.com',
+        'https://www.notypeai.com',
+        'https://notypeaiweb-backend.onrender.com',
+        'https://notypeaiweb-backend.onrender.com/auth/google/callback'
+      ]
     : 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -50,7 +55,8 @@ app.use(session({
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
-    domain: '.onrender.com'
+    domain: 'notypeaiweb-backend.onrender.com',
+    path: '/'
   } : {
     secure: false,
     sameSite: 'lax',

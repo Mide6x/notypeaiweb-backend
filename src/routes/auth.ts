@@ -16,22 +16,38 @@ router.get('/google/callback',
     if (process.env.NODE_ENV === 'production') {
       req.session.cookie.secure = true;
       req.session.cookie.sameSite = 'none';
-      req.session.cookie.domain = '.onrender.com';
-      req.session.cookie.path = '/';
+      req.session.cookie.domain = 'notypeaiweb-backend.onrender.com';
+      
+      // Save session before redirect
+      req.session.save((err) => {
+        if (err) {
+          console.error('Session save error:', err);
+          return res.redirect(`${process.env.CLIENT_URL}/login`);
+        }
+        res.redirect(`${process.env.CLIENT_URL}/dashboard`);
+      });
+    } else {
+      res.redirect(`${process.env.CLIENT_URL}/dashboard`);
     }
-    res.redirect(`${process.env.CLIENT_URL}/dashboard`);
   }
 );
 
 router.get('/user', (req, res) => {
+  console.log('Session ID:', req.sessionID);
   console.log('Session:', req.session);
   console.log('User:', req.user);
   console.log('Is Authenticated:', req.isAuthenticated());
+  console.log('Cookies:', req.cookies);
+  console.log('Headers:', req.headers);
   
   if (req.isAuthenticated()) {
     res.json(req.user);
   } else {
-    res.status(401).json({ message: 'Not authenticated' });
+    res.status(401).json({ 
+      message: 'Not authenticated',
+      sessionExists: !!req.session,
+      hasUser: !!req.user
+    });
   }
 });
 
