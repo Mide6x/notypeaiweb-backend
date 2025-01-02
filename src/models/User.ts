@@ -1,10 +1,17 @@
-import mongoose, { Document } from 'mongoose';
-import { User } from '../types/auth';
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { User, UserDocument } from '../types/auth';
 
-const userSchema = new mongoose.Schema({
+interface IUserMethods {
+  comparePassword(candidatePassword: string): Promise<boolean>;
+}
+
+type UserModel = mongoose.Model<User, {}, IUserMethods>;
+
+const userSchema = new mongoose.Schema<User, UserModel, IUserMethods>({
   googleId: {
     type: String,
-    required: true,
+    sparse: true,
     unique: true
   },
   email: {
@@ -16,9 +23,15 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  password: {
+    type: String,
+    required: function(this: { googleId?: string }) {
+      return !this.googleId;
+    }
+  },
   picture: {
     type: String,
-    required: true
+    default: 'https://ui-avatars.com/api/?background=random'
   },
   createdAt: {
     type: Date,
@@ -26,5 +39,16 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-export interface UserModel extends Document, Omit<User, '_id'> {}
-export default mongoose.model<UserModel>('User', userSchema); 
+userSchema.pre('save', async function(next) {
+  if (this.isModified('password') && this.password) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+userSchema.methods.comparePassword = async function(candidatePassword: string): Promise<boolean> {
+  if (!this.password) return false;
+  return bcrypt.compare(candidatePassword, this.password);
+};
+
+export default mongoose.model<User, UserModel>('User', userSchema); 

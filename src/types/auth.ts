@@ -2,21 +2,16 @@ import { Document, Types } from 'mongoose';
 
 export interface User {
   _id: Types.ObjectId;
-  googleId: string;
+  googleId?: string;
   email: string;
   name: string;
   picture: string;
+  password?: string;
   createdAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
-export interface UserDocument extends Document {
-  _id: Types.ObjectId;
-  googleId: string;
-  email: string;
-  name: string;
-  picture: string;
-  createdAt: Date;
-}
+export type UserDocument = Document & User;
 
 declare global {
   namespace Express {
