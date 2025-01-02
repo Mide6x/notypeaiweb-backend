@@ -1,4 +1,4 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response, NextFunction, RequestHandler } from 'express';
 import passport from 'passport';
 import User from '../models/User';
 import { User as UserType, UserDocument } from '../types/auth';
@@ -74,6 +74,23 @@ interface RegisterRequest {
 interface LoginRequest {
   email: string;
   password: string;
+}
+
+interface UpdateProfileRequest {
+  name: string;
+}
+
+interface UpdateProfileResponse {
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    picture: string;
+  };
+}
+
+interface ErrorResponse {
+  message: string;
 }
 
 // Register with email/password
@@ -207,5 +224,39 @@ router.post('/logout', (req, res) => {
     });
   });
 });
+
+// Add this route to handle profile updates
+router.put('/update-profile', (async (req: Request<{}, UpdateProfileResponse | ErrorResponse, UpdateProfileRequest>, res: Response<UpdateProfileResponse | ErrorResponse>) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    const { name } = req.body;
+    const userId = (req.user as UserDocument)._id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { name },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({
+      user: {
+        id: user._id.toString(),
+        email: user.email,
+        name: user.name,
+        picture: user.picture
+      }
+    });
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
+}) as RequestHandler);
 
 export default router; 
