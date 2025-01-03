@@ -39,9 +39,15 @@ app.enable('trust proxy');
 
 // Middleware
 app.use(express.json());
+
+// Configure CORS with specific options
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Set-Cookie'],
+  maxAge: 600 // Cache preflight requests for 10 minutes
 }));
 
 // Configure session with MongoStore
@@ -65,7 +71,8 @@ app.use(session({
     secure: false,
     sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000,
-    httpOnly: true
+    httpOnly: true,
+    path: '/'
   }
 }));
 
