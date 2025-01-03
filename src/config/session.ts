@@ -13,15 +13,14 @@ const sessionConfig = session({
     mongoUrl: process.env.MONGODB_URI,
     ttl: 24 * 60 * 60, // 1 day
   }),
+  proxy: true,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 1 day
     httpOnly: true,
     path: '/',
-    domain: process.env.NODE_ENV === 'production' 
-      ? '.notypeaiweb-backend.onrender.com'
-      : undefined
+    domain: undefined
   }
 });
 

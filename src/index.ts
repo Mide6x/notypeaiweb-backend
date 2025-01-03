@@ -45,7 +45,7 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
   exposedHeaders: ['Set-Cookie'],
   maxAge: 600 // Cache preflight requests for 10 minutes
 }));
@@ -65,7 +65,6 @@ app.use(session({
     sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
-    domain: 'notypeaiweb-backend.onrender.com',
     path: '/'
   } : {
     secure: false,
