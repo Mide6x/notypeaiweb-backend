@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import MongoStore from 'connect-mongo';
+import rateLimit from 'express-rate-limit';
 
 // Load environment variables first
 dotenv.config({ path: path.join(__dirname, '../.env') });
@@ -31,11 +32,23 @@ import mongoose from 'mongoose';
 import './config/passport';
 import authRoutes from './routes/auth';
 import aiRoutes from './routes/ai';
+import translateRouter from './routes/translate';
 
 const app = express();
 
-// Add this before other middleware
-app.enable('trust proxy');
+// Configure trust proxy for Docker/reverse proxy setup
+app.set('trust proxy', 1);
+
+// Configure rate limiter
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply rate limiting to all routes
+app.use(limiter);
 
 // Middleware
 app.use(express.json());
@@ -92,11 +105,10 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Add after existing middleware
+// Routes
 app.use('/auth', authRoutes);
-
-// Add after existing routes
 app.use('/api/ai', aiRoutes);
+app.use('/translate', translateRouter);
 
 // Add a health check endpoint
 app.get('/health', (req, res) => {

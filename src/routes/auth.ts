@@ -77,15 +77,21 @@ interface LoginRequest {
 }
 
 interface UpdateProfileRequest {
-  name: string;
+  name?: string;
+  preferences?: {
+    language?: string;
+    theme?: 'light' | 'dark';
+  };
 }
 
 interface UpdateProfileResponse {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-    picture: string;
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+  preferences?: {
+    language?: string;
+    theme?: 'light' | 'dark';
   };
 }
 
@@ -191,72 +197,89 @@ router.get('/google/callback',
   }
 );
 
-router.get('/user', (req, res) => {
-  console.log('Session ID:', req.sessionID);
-  console.log('Session:', req.session);
-  console.log('User:', req.user);
-  console.log('Is Authenticated:', req.isAuthenticated());
-  console.log('Cookies:', req.cookies);
-  console.log('Headers:', req.headers);
-  
-  if (req.isAuthenticated()) {
-    res.json(req.user);
-  } else {
-    res.status(401).json({ 
-      message: 'Not authenticated',
-      sessionExists: !!req.session,
-      hasUser: !!req.user
-    });
+router.get('/user', async (req, res) => {
+  try {
+    if (req.isAuthenticated() && req.user) {
+      // Fetch fresh user data from database
+      const user = await User.findById((req.user as UserDocument)._id);
+      
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+        return;
+      }
+
+      // Return formatted user data
+      res.json({
+        id: user._id,
+        email: user.email,
+        name: user.name || user.email.split('@')[0], // Use email username as fallback
+        picture: user.picture
+      });
+    } else {
+      res.status(401).json({ 
+        message: 'Not authenticated',
+        sessionExists: !!req.session,
+        hasUser: !!req.user
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error fetching user data' });
   }
 });
 
-router.post('/logout', (req, res) => {
-  req.logout((err) => {
+router.post('/logout', (req, res, next) => {
+  return req.logout((err) => {
     if (err) {
       return res.status(500).json({ message: 'Error logging out' });
     }
-    req.session.destroy((err) => {
+    return req.session.destroy((err) => {
       if (err) {
         return res.status(500).json({ message: 'Error destroying session' });
       }
       res.clearCookie('connect.sid');
-      res.status(200).json({ message: 'Logged out successfully' });
+      return res.status(200).json({ message: 'Logged out successfully' });
     });
   });
 });
 
 // Add this route to handle profile updates
-router.put('/update-profile', (async (req: Request<{}, UpdateProfileResponse | ErrorResponse, UpdateProfileRequest>, res: Response<UpdateProfileResponse | ErrorResponse>) => {
+router.put('/update-profile', async (req: Request<{}, UpdateProfileResponse | ErrorResponse, UpdateProfileRequest>, res: Response<UpdateProfileResponse | ErrorResponse>) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
+      res.status(401).json({ message: 'Not authenticated' });
+      return;
     }
 
-    const { name } = req.body;
+    const { name, preferences } = req.body;
     const userId = (req.user as UserDocument)._id;
+
+    const updateData: { name?: string; preferences?: typeof preferences } = {};
+    if (name) updateData.name = name;
+    if (preferences) updateData.preferences = preferences;
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { name },
+      { $set: updateData },
       { new: true }
     );
 
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      res.status(404).json({ message: 'User not found' });
+      return;
     }
 
     res.json({
-      user: {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        picture: user.picture
-      }
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      preferences: user.preferences
     });
   } catch (error) {
-    console.error('Profile update error:', error);
+    console.error('Update profile error:', error);
     res.status(500).json({ message: 'Failed to update profile' });
   }
-}) as RequestHandler);
+});
 
 export default router; 
