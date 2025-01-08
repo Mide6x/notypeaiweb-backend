@@ -58,10 +58,24 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
-  exposedHeaders: ['Set-Cookie', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
-  maxAge: 600 // Cache preflight requests for 10 minutes
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
 }));
+
+// Additional headers for mobile support
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && origin.includes(process.env.CLIENT_URL || 'localhost')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cookie'
+  );
+  next();
+});
 
 // Configure session with MongoStore
 app.use(session({
@@ -76,7 +90,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
     httpOnly: true,
     path: '/'
   }
