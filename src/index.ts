@@ -58,8 +58,8 @@ app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie'],
-  exposedHeaders: ['Set-Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Cookie', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
+  exposedHeaders: ['Set-Cookie', 'Access-Control-Allow-Origin', 'Access-Control-Allow-Credentials'],
   maxAge: 600 // Cache preflight requests for 10 minutes
 }));
 
@@ -73,15 +73,9 @@ app.use(session({
     ttl: 24 * 60 * 60
   }),
   proxy: true,
-  cookie: process.env.NODE_ENV === 'production' ? {
-    secure: true,
-    sameSite: 'none',
-    maxAge: 24 * 60 * 60 * 1000,
-    httpOnly: true,
-    path: '/'
-  } : {
-    secure: false,
-    sameSite: 'lax',
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000,
     httpOnly: true,
     path: '/'
